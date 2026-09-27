@@ -1,4 +1,4 @@
-import { Router, type Request, type Response, type NextFunction } from "express";
+import { Router } from "express";
 import { DataSource } from "typeorm";
 
 import { ipWhitelistMiddleware } from "@/middleware/ip-whitelist.middleware";
@@ -31,8 +31,8 @@ export function createAdminRouter({
   dataSource,
   allowedCidrs,
   invoiceService,
-  extensionService,
-  metricsService,
+  extensionService: _extensionService,
+  metricsService: _metricsService,
 }: AdminRouterDependencies): Router {
   const router = Router();
   const ipWhitelist = ipWhitelistMiddleware(allowedCidrs);

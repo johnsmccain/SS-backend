@@ -13,7 +13,7 @@ import { createAuthRateLimiter } from "../middleware/redis-rate-limit.middleware
 import { createCircuitBreaker } from "../lib/circuit-breaker";
 import type { AuthService } from "../services/auth.service";
 import type { AppLogger } from "../observability/logger";
-import { AppError, HttpError } from "../utils/http-error";
+import { HttpError } from "../utils/http-error";
 
 // Strict schemas: enforce Stellar G... format hint, length bounds, and sanitized inputs.
 const _STELLAR_PUBLIC_KEY_PATTERN = /^G[A-Z2-7]{55}$/;

@@ -1,4 +1,4 @@
-import { DataSource, Repository, MoreThan, LessThan } from "typeorm";
+import { DataSource, Repository } from "typeorm";
 import {
   DividendCycleConfig,
   DividendCycleFrequency,

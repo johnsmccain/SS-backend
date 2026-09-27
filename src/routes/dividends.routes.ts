@@ -1,4 +1,4 @@
-import { Router, Request, Response, NextFunction } from "express";
+import { Router, Response, NextFunction } from "express";
 import { DividendCycleService } from "../services/dividend-cycle.service";
 import { DividendCycleFrequency } from "../models/DividendCycleConfig.model";
 import { AppError } from "../utils/http-error";
