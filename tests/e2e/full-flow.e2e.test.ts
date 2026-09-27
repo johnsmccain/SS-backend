@@ -40,6 +40,9 @@ import { AuthChallenge } from "../../src/models/AuthChallenge.model";
 import { Transaction } from "../../src/models/Transaction.model";
 import { KYCVerification } from "../../src/models/KYCVerification.model";
 import { Notification } from "../../src/models/Notification.model";
+import { KycHistory } from "../../src/models/KycHistory.model";
+import { SecondaryListing } from "../../src/models/SecondaryListing.model";
+import { Watchlist } from "../../src/models/Watchlist.model";
 import { InvoiceStatusHistory } from "../../src/models/InvoiceStatusHistory.model";
 import { InvestorReturn } from "../../src/models/InvestorReturn.model";
 import { SettlementRemainder } from "../../src/models/SettlementRemainder.model";
@@ -332,6 +335,9 @@ describe("E2E: Complete Invoice Financing Flow", () => {
           Transaction,
           KYCVerification,
           Notification,
+          KycHistory,
+          SecondaryListing,
+          Watchlist,
           InvoiceStatusHistory,
           InvestorReturn,
           SettlementRemainder,

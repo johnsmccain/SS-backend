@@ -413,7 +413,7 @@ export function createInvoiceRouter({
           }
           const proposedDeadline = new Date(proposedRaw);
           const request = await extensionService.requestExtension({
-            invoiceId: String(req.params.id),
+            invoiceId: Array.isArray(req.params.id) ? req.params.id[0] : req.params.id,
             sellerId: user.id,
             proposedDeadline,
             reason: typeof req.body?.reason === "string" ? req.body.reason : null,

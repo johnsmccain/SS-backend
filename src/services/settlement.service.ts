@@ -5,7 +5,7 @@ import { Investment } from "../models/Investment.model";
 import { User } from "../models/User.model";
 import { InvestorReturn } from "../models/InvestorReturn.model";
 import { SettlementRemainder } from "../models/SettlementRemainder.model";
-import { InvoiceStatus, InvestmentStatus } from "../types/enums";
+import { InvoiceStatus, InvestmentStatus, NotificationType } from "../types/enums";
 import { TransactionStatus, TransactionType } from "../types/enums";
 import { Transaction } from "../models/Transaction.model";
 import { ServiceError } from "../utils/service-error";
@@ -29,6 +29,7 @@ import {
   type SettlementEventListener,
 } from "../lib/settlement-events";
 import type { PaymentDistributorContractService } from "./stellar/payment-distributor-contract.service";
+import type { NotificationService } from "./notification.service";
 
 // settlement.service.ts stores/computes amounts as decimal strings scaled by
 // 10^4 (see decimal-bigint.ts), while stroopsToXlm expects a stroops count
@@ -73,7 +74,8 @@ export class SettlementService {
     private readonly paymentDistributor?: PaymentDistributorContractService,
     private readonly distributorConfig?: PaymentDistributorSettlementConfig,
     private readonly stateMachine: InvoiceStateMachine = createInvoiceStateMachine(),
-    private readonly eventEmitter: SettlementEventEmitter = settlementEventEmitter
+    private readonly eventEmitter: SettlementEventEmitter = settlementEventEmitter,
+    private readonly notificationService?: NotificationService
   ) {}
 
   /**
@@ -409,6 +411,35 @@ export class SettlementService {
       // Emit settlement event for downstream processing
       this.eventEmitter.emitSettlement(settlementEvent);
 
+      // Dispatch settlement notifications to all holders
+      if (this.notificationService) {
+        try {
+          for (const settlement of result.settlements) {
+            await this.notificationService.createNotification(
+              settlement.investorId,
+              NotificationType.SETTLEMENT_RECEIVED,
+              "Settlement Received",
+              `You have received ${settlement.actualReturn} for your investment in invoice #${result.invoiceId}`,
+              {
+                invoiceId: result.invoiceId,
+                investmentId: settlement.investmentId,
+                amount: settlement.actualReturn,
+              }
+            );
+          }
+          logger.info("settlement.notifications.sent", {
+            invoiceId: result.invoiceId,
+            recipientCount: result.settlements.length,
+          });
+        } catch (notificationError) {
+          logger.error("settlement.notifications.failed", {
+            invoiceId: result.invoiceId,
+            error: notificationError instanceof Error ? notificationError.message : String(notificationError),
+          });
+          // Don't fail the settlement if notifications fail
+        }
+      }
+
       logSettlementSuccess(logger, {
         invoiceId: result.invoiceId,
         totalProceedsStroops: proceedsScaled * DECIMAL_SCALE_TO_STROOP_FACTOR,
@@ -436,13 +467,15 @@ export function createSettlementService(
   paymentDistributor?: PaymentDistributorContractService,
   distributorConfig?: PaymentDistributorSettlementConfig,
   stateMachine?: InvoiceStateMachine,
-  eventEmitter?: SettlementEventEmitter
+  eventEmitter?: SettlementEventEmitter,
+  notificationService?: NotificationService
 ): SettlementService {
   return new SettlementService(
     dataSource,
     paymentDistributor,
     distributorConfig,
     stateMachine,
-    eventEmitter
+    eventEmitter,
+    notificationService
   );
 }

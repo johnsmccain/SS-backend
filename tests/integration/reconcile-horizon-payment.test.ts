@@ -5,6 +5,9 @@ import { Invoice } from "../../src/models/Invoice.model";
 import { User } from "../../src/models/User.model";
 import { KYCVerification } from "../../src/models/KYCVerification.model";
 import { Notification } from "../../src/models/Notification.model";
+import { KycHistory } from "../../src/models/KycHistory.model";
+import { SecondaryListing } from "../../src/models/SecondaryListing.model";
+import { Watchlist } from "../../src/models/Watchlist.model";
 import { AuthChallenge } from "../../src/models/AuthChallenge.model";
 import {
   InvestmentStatus,
@@ -64,6 +67,9 @@ describe("Horizon Reconciliation Worker Integration Test", () => {
         Transaction,
         KYCVerification,
         Notification,
+        KycHistory,
+        SecondaryListing,
+        Watchlist,
         AuthChallenge,
       ],
       synchronize: true,

@@ -83,8 +83,17 @@ export class User {
   @OneToMany("KYCVerification", "user")
   kycVerifications!: import("./KYCVerification.model").KYCVerification[];
 
+  @OneToMany("KycHistory", "user")
+  kycHistory!: import("./KycHistory.model").KycHistory[];
+
   @OneToMany("Notification", "user")
   notifications!: import("./Notification.model").Notification[];
+
+  @OneToMany("SecondaryListing", "seller")
+  secondaryListings!: import("./SecondaryListing.model").SecondaryListing[];
+
+  @OneToMany("Watchlist", "user")
+  watchlistEntries!: import("./Watchlist.model").Watchlist[];
 
   /**
    * Validates a Stellar address format and length.
@@ -316,6 +325,9 @@ export class User {
         transactions: user.transactions,
         kycVerifications: user.kycVerifications,
         notifications: user.notifications,
+        secondaryListings: user.secondaryListings,
+        watchlistEntries: user.watchlistEntries,
+        kycHistory: user.kycHistory,
       };
       return dto;
     } catch (error) {

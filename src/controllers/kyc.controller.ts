@@ -40,5 +40,15 @@ export function createKycController(service: KycService) {
       await service.processWebhook(payload as Parameters<KycService["processWebhook"]>[0]);
       return res.status(204).send();
     },
+    resubmit: async (req: AuthenticatedRequest, res: Response) => {
+      if (!req.user) return res.status(401).json({ error: "Authentication required" });
+      const verification = await service.resubmitKycVerification(req.user.stellarAddress, req.body);
+      return res.status(201).json({ success: true, data: verification });
+    },
+    getHistory: async (req: AuthenticatedRequest, res: Response) => {
+      if (!req.user) return res.status(401).json({ error: "Authentication required" });
+      const history = await service.getKycHistory(req.user.stellarAddress);
+      return res.status(200).json({ success: true, data: history });
+    },
   };
 }

@@ -86,5 +86,20 @@ export function createKycRouter(service: KycService, authService: AuthService): 
     createAuthMiddleware(authService),
     controller.submit
   );
+
+  router.post(
+    "/resubmit",
+    createAuthMiddleware(authService),
+    requireSeller(),
+    validateKycBody,
+    controller.resubmit
+  );
+
+  router.get(
+    "/history",
+    createAuthMiddleware(authService),
+    controller.getHistory
+  );
+
   return router;
 }

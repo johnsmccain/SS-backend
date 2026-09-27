@@ -37,7 +37,8 @@ export interface NotificationRepositoryContract {
     userId: string,
     type: NotificationType,
     title: string,
-    message: string
+    message: string,
+    data?: Record<string, unknown>
   ): Promise<Notification>;
   /** Inserts all entries in a single statement. */
   createMany(entries: NotificationInput[]): Promise<void>;
@@ -63,9 +64,10 @@ export class NotificationService {
     userId: string,
     type: NotificationType,
     title: string,
-    message: string
+    message: string,
+    data?: Record<string, unknown>
   ): Promise<Notification> {
-    return this.notificationRepository.create(userId, type, title, message);
+    return this.notificationRepository.create(userId, type, title, message, data);
   }
 
   /**
@@ -121,14 +123,22 @@ class TypeOrmNotificationRepository implements NotificationRepositoryContract {
     userId: string,
     type: NotificationType,
     title: string,
-    message: string
+    message: string,
+    data?: Record<string, unknown>
   ): Promise<Notification> {
-    const entity = this.repository.create({ userId, type, title, message });
+    const entity = this.repository.create({ userId, type, title, message, data });
     return this.repository.save(entity);
   }
 
   async createMany(entries: NotificationInput[]): Promise<void> {
-    await this.repository.insert(entries);
+    const entities = entries.map(entry => this.repository.create({
+      userId: entry.userId,
+      type: entry.type,
+      title: entry.title,
+      message: entry.message,
+      data: entry.data || null,
+    }));
+    await this.repository.save(entities);
   }
 
   findByIdAndUserId(id: string, userId: string): Promise<Notification | null> {

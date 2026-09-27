@@ -26,6 +26,8 @@ import { createPortfolioRouter } from "./routes/portfolio.routes";
 import { createContractGuardService } from "./services/stellar/contract-guard.service";
 import { createKeysRouter } from "./routes/keys.routes";
 import { createDividendsRouter } from "./routes/dividends.routes";
+import { createSecondaryMarketRouter } from "./routes/secondary-market.routes";
+import { createWatchlistRouter } from "./routes/watchlist.routes";
 import type { RatingsLeaderboardService } from "./services/ratings-leaderboard.service";
 import type { DividendCycleService } from "./services/dividend-cycle.service";
 
@@ -41,6 +43,9 @@ import type { InvestorAcknowledgementService } from "./services/investor-acknowl
 import type { InvoiceExtensionService } from "./services/invoice-extension.service";
 import type { AdminMetricsService } from "./services/admin-metrics.service";
 import type { PortfolioService } from "./services/portfolio.service";
+import type { SecondaryMarketService } from "./services/secondary-market.service";
+import type { WatchlistService } from "./services/watchlist.service";
+import type { SettlementWorker } from "./workers/settlement.worker";
 
 import dataSource from "./config/database";
 
@@ -113,9 +118,12 @@ export interface AppDependencies {
   kycService?: KycService;
   ratingsLeaderboardService?: RatingsLeaderboardService;
   dividendCycleService?: DividendCycleService;
+  secondaryMarketService?: SecondaryMarketService;
+  watchlistService?: WatchlistService;
+  settlementWorker?: SettlementWorker;
   acknowledgementService?: InvestorAcknowledgementService;
-  portfolioService?: PortfolioService;
   extensionService?: InvoiceExtensionService;
+  portfolioService?: PortfolioService;
   adminMetricsService?: AdminMetricsService;
   logger?: AppLogger;
   metricsEnabled?: boolean;
@@ -146,6 +154,9 @@ export function createApp({
   kycService,
   ratingsLeaderboardService,
   dividendCycleService,
+  secondaryMarketService,
+  watchlistService,
+  settlementWorker,
   acknowledgementService,
   portfolioService,
   extensionService,
@@ -318,6 +329,7 @@ export function createApp({
       "/api/v1/settlements",
       createSettlementRouter({
         settlementService,
+        settlementWorker,
         contractGuardService,
         contractId: pauseGuardContractId,
       })
@@ -332,6 +344,17 @@ export function createApp({
   if (sellerService) {
     app.use("/api/v1/seller", createSellerRouter({ sellerService, authService }));
     app.use("/seller", createSellerRouter({ sellerService, authService }));
+  }
+
+  if (secondaryMarketService && authService) {
+    app.use(
+      "/api/v1/secondary",
+      createSecondaryMarketRouter({ secondaryMarketService, authService })
+    );
+  }
+
+  if (watchlistService && authService) {
+    app.use("/api/v1/watchlist", createWatchlistRouter({ watchlistService, authService }));
   }
 
   // ---- Keys: Ratings Leaderboard ----

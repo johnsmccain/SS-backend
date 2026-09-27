@@ -19,6 +19,7 @@ export interface NotificationInput {
   type: NotificationType;
   title: string;
   message: string;
+  data?: Record<string, unknown>;
 }
 
 /** Satisfied by `NotificationService.createNotifications`. */

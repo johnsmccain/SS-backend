@@ -201,6 +201,10 @@ export class Invoice {
 
   settlementRemainders?: import("./SettlementRemainder.model").SettlementRemainder[];
 
+  secondaryListings?: import("./SecondaryListing.model").SecondaryListing[];
+
+  watchlistEntries?: import("./Watchlist.model").Watchlist[];
+
   /**
    * Calculates the exact net amount using arbitrary-precision decimal arithmetic.
    * Net Amount = amount * (1 - discountRate / 100) rounded to 4 decimal places.

@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import { DataSource, In } from "typeorm";
 import { KYCVerification } from "../models/KYCVerification.model";
+import { KycHistory } from "../models/KycHistory.model";
 import { User } from "../models/User.model";
 import { KYCStatus, KYCVerificationType } from "../types/enums";
 import { HttpError } from "../utils/http-error";
@@ -30,6 +31,9 @@ export interface KycDocumentSubmission {
 
 /** Statuses that indicate a KYC submission is already in flight or finalized enough to block a new one. */
 const PENDING_STATUSES = [KYCStatus.PENDING, KYCStatus.APPROVED];
+
+/** Statuses that allow resubmission (rejected or expired). */
+const RESUBMITTABLE_STATUSES = [KYCStatus.REJECTED, KYCStatus.EXPIRED];
 
 export class KycService {
   constructor(
@@ -140,6 +144,7 @@ export class KycService {
     await this.dataSource.transaction(async (manager) => {
       const userRepository = manager.getRepository(User);
       const verificationRepository = manager.getRepository(KYCVerification);
+      const historyRepository = manager.getRepository(KycHistory);
       const user = await userRepository.findOneBy({ id: payload.userId });
       if (!user) throw new HttpError(404, "User not found.");
 
@@ -150,9 +155,25 @@ export class KycService {
           });
       if (!verification) throw new HttpError(404, "KYC verification not found.");
 
+      const previousStatus = verification.status;
       verification.status = payload.status;
       verification.verifiedAt = new Date();
       await verificationRepository.save(verification);
+
+      // Archive to history before status change
+      const historyEntry = historyRepository.create({
+        userId: user.id,
+        wallet: verification.wallet,
+        verificationType: verification.verificationType,
+        status: previousStatus,
+        documents: verification.documents,
+        rejectionReason: payload.status === KYCStatus.REJECTED ? payload.reason : null,
+        providerReference: (verification.documents as { providerReference?: string })?.providerReference || null,
+        isArchived: true,
+        archivedAt: new Date(),
+      });
+      await historyRepository.save(historyEntry);
+
       await userRepository.update(payload.userId, {
         kycStatus: payload.status,
         isKycVerified: payload.status === KYCStatus.APPROVED,
@@ -164,5 +185,117 @@ export class KycService {
         reason: payload.reason ?? null,
       });
     });
+  }
+
+  /**
+   * Submit a new KYC verification after rejection or expiry.
+   * Previous submission is archived before creating the new one.
+   * Only allowed in rejected or expired states.
+   */
+  async resubmitKycVerification(
+    wallet: string,
+    payload: KycDocumentSubmission
+  ): Promise<KYCVerification> {
+    return this.dataSource.transaction(async (manager) => {
+      const user = await manager.getRepository(User).findOne({
+        where: { stellarAddress: wallet },
+      });
+      if (!user) throw new HttpError(404, "User not found.");
+
+      const verificationRepository = manager.getRepository(KYCVerification);
+      const historyRepository = manager.getRepository(KycHistory);
+
+      // Get current verification
+      const currentVerification = await verificationRepository.findOne({
+        where: {
+          wallet,
+          status: In([...PENDING_STATUSES, ...RESUBMITTABLE_STATUSES]),
+        },
+      });
+
+      if (!currentVerification) {
+        throw new HttpError(404, "No existing KYC verification found for this wallet.");
+      }
+
+      // Check if resubmission is allowed
+      if (!RESUBMITTABLE_STATUSES.includes(currentVerification.status)) {
+        throw new HttpError(
+          400,
+          `Cannot resubmit KYC verification with status ${currentVerification.status}. Only rejected or expired verifications can be resubmitted.`
+        );
+      }
+
+      // Archive previous submission in history
+      const historyEntry = historyRepository.create({
+        userId: user.id,
+        wallet: currentVerification.wallet,
+        verificationType: currentVerification.verificationType,
+        status: currentVerification.status,
+        documents: currentVerification.documents,
+        rejectionReason: currentVerification.status === KYCStatus.REJECTED ? "Resubmitted" : null,
+        providerReference: (currentVerification.documents as { providerReference?: string })?.providerReference || null,
+        isArchived: true,
+        archivedAt: new Date(),
+      });
+      await historyRepository.save(historyEntry);
+
+      // Create new verification
+      const newVerification = verificationRepository.create({
+        userId: user.id,
+        wallet,
+        verificationType: KYCVerificationType.IDENTITY,
+        status: KYCStatus.PENDING,
+        documents: {
+          documentType: payload.documentType,
+          documentNumber: payload.documentNumber,
+          ipfsDocumentUrl: payload.ipfsDocumentUrl,
+        },
+      });
+      const saved = await verificationRepository.save(newVerification);
+
+      // Update user status
+      await manager.getRepository(User).update(user.id, {
+        kycStatus: KYCStatus.PENDING,
+        isKycVerified: false,
+      });
+
+      this.appLogger.info("kyc.resubmission.created", {
+        user_id: user.id,
+        wallet,
+        previous_verification_id: currentVerification.id,
+        new_verification_id: saved.id,
+        previous_status: currentVerification.status,
+      });
+
+      return saved;
+    });
+  }
+
+  /**
+   * Get all KYC submission history for a wallet.
+   * Returns all records in descending order (newest first).
+   */
+  async getKycHistory(wallet: string): Promise<KycHistory[]> {
+    const historyRepository = this.dataSource.getRepository(KycHistory);
+    const history = await historyRepository.find({
+      where: { wallet },
+      order: { createdAt: "DESC" },
+    });
+
+    return history;
+  }
+
+  /**
+   * Get KYC history for a user by user ID.
+   * Returns all records in descending order (newest first).
+   */
+  async getKycHistoryByUserId(userId: string): Promise<KycHistory[]> {
+    const historyRepository = this.dataSource.getRepository(KycHistory);
+    const history = await historyRepository.find({
+      where: { userId },
+      order: { createdAt: "DESC" },
+    });
+
+    return history;
   }
 }

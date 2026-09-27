@@ -13,6 +13,7 @@ export enum KYCStatus {
   IN_REVIEW = "in_review",
   APPROVED = "approved",
   REJECTED = "rejected",
+  EXPIRED = "expired",
 }
 
 export enum InvoiceStatus {
@@ -75,4 +76,12 @@ export enum ExtensionRequestStatus {
   PENDING = "pending",
   APPROVED = "approved",
   REJECTED = "rejected",
+}
+
+/** Secondary market listing status for invoice fraction trading. */
+export enum ListingStatus {
+  ACTIVE = "active",
+  SOLD = "sold",
+  CANCELLED = "cancelled",
+  EXPIRED = "expired",
 }

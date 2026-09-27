@@ -8,6 +8,9 @@ import { Investment } from "../../src/models/Investment.model";
 import { Transaction } from "../../src/models/Transaction.model";
 import { KYCVerification } from "../../src/models/KYCVerification.model";
 import { Notification } from "../../src/models/Notification.model";
+import { KycHistory } from "../../src/models/KycHistory.model";
+import { SecondaryListing } from "../../src/models/SecondaryListing.model";
+import { Watchlist } from "../../src/models/Watchlist.model";
 import { AuthChallenge } from "../../src/models/AuthChallenge.model";
 import { InvoiceStatus, UserType, KYCStatus } from "../../src/types/enums";
 import { createInvoiceService } from "../../src/services/invoice.service";
@@ -51,6 +54,9 @@ describe("Invoice list endpoint filtering by status", () => {
         Transaction,
         KYCVerification,
         Notification,
+        KycHistory,
+        SecondaryListing,
+        Watchlist,
         AuthChallenge,
       ],
       synchronize: true,

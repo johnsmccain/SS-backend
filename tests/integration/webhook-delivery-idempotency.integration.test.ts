@@ -10,6 +10,9 @@ import { AuthChallenge } from "../../src/models/AuthChallenge.model";
 import { Transaction } from "../../src/models/Transaction.model";
 import { KYCVerification } from "../../src/models/KYCVerification.model";
 import { Notification } from "../../src/models/Notification.model";
+import { KycHistory } from "../../src/models/KycHistory.model";
+import { SecondaryListing } from "../../src/models/SecondaryListing.model";
+import { Watchlist } from "../../src/models/Watchlist.model";
 import type { AppLogger, LogMetadata } from "../../src/observability/logger";
 
 /**
@@ -95,6 +98,9 @@ describe("Webhook delivery idempotency (issue #224)", () => {
         Transaction,
         KYCVerification,
         Notification,
+        KycHistory,
+        SecondaryListing,
+        Watchlist,
         WebhookSubscription,
         WebhookDeliveryLog,
       ],

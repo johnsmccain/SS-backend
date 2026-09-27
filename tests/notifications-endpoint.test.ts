@@ -9,6 +9,9 @@ import { Transaction } from "../src/models/Transaction.model";
 import { KYCVerification } from "../src/models/KYCVerification.model";
 import { AuthChallenge } from "../src/models/AuthChallenge.model";
 import { Notification } from "../src/models/Notification.model";
+import { KycHistory } from "../src/models/KycHistory.model";
+import { SecondaryListing } from "../src/models/SecondaryListing.model";
+import { Watchlist } from "../src/models/Watchlist.model";
 import { KycEvent } from "../src/models/KycEvent.model";
 import { InvestmentEvent } from "../src/models/InvestmentEvent.model";
 import { SettlementEvent } from "../src/models/SettlementEvent.model";
@@ -61,6 +64,9 @@ describe("Notifications Endpoint (Issue #458)", () => {
         KYCVerification,
         AuthChallenge,
         Notification,
+        KycHistory,
+        SecondaryListing,
+        Watchlist,
         KycEvent,
         InvestmentEvent,
         SettlementEvent,

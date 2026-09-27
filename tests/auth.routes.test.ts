@@ -91,6 +91,9 @@ class InMemoryUserRepository implements UserRepositoryContract {
       transactions: user.transactions ?? [],
       kycVerifications: user.kycVerifications ?? [],
       notifications: user.notifications ?? [],
+      kycHistory: user.kycHistory ?? [],
+      secondaryListings: user.secondaryListings ?? [],
+      watchlistEntries: user.watchlistEntries ?? [],
     };
 
     this.users.set(entity.id, entity);

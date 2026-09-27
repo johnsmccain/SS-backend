@@ -30,6 +30,9 @@ import { PaymentDistributorContractService } from "./services/stellar/payment-di
 import { getSorobanConfig } from "./config/stellar";
 import { createRatingsLeaderboardService } from "./services/ratings-leaderboard.service";
 import { createDividendCycleService } from "./services/dividend-cycle.service";
+import { createSecondaryMarketService } from "./services/secondary-market.service";
+import { createWatchlistService } from "./services/watchlist.service";
+import { createSettlementWorker } from "./workers/settlement.worker";
 import { scheduleAnalyticsSnapshotJob } from "./workers/analytics-snapshot.worker";
 
 export async function bootstrap(): Promise<{ server: Server }> {
@@ -79,7 +82,9 @@ export async function bootstrap(): Promise<{ server: Server }> {
     dataSource,
     distributor,
     distributorConfig,
-    invoiceStateMachine
+    invoiceStateMachine,
+    undefined,
+    notificationService
   );
   const marketplaceService = createMarketplaceService(dataSource);
   const kycService = new KycService(dataSource, config.kyc.webhookSecret ?? "", logger);
@@ -102,6 +107,15 @@ export async function bootstrap(): Promise<{ server: Server }> {
   // ---- Feature: Dividend Cycle Config ----
   const dividendCycleService = createDividendCycleService(dataSource);
 
+  // ---- Feature: Secondary Market ----
+  const secondaryMarketService = createSecondaryMarketService(dataSource);
+
+  // ---- Feature: Watchlist ----
+  const watchlistService = createWatchlistService(dataSource);
+
+  // ---- Feature: Settlement Worker ----
+  const settlementWorker = createSettlementWorker(dataSource, settlementService);
+
   const app = createApp({
     authService,
     notificationService,
@@ -112,6 +126,9 @@ export async function bootstrap(): Promise<{ server: Server }> {
     kycService,
     ratingsLeaderboardService,
     dividendCycleService,
+    secondaryMarketService,
+    watchlistService,
+    settlementWorker,
     config,
     logger,
     metricsEnabled: config.observability.metricsEnabled,
@@ -124,9 +141,13 @@ export async function bootstrap(): Promise<{ server: Server }> {
   // ---- Start daily analytics snapshot cron (midnight UTC) ----
   const snapshotScheduler = scheduleAnalyticsSnapshotJob(dataSource);
 
-  // Stop scheduler on server close
+  // ---- Start settlement worker cron (hourly) ----
+  settlementWorker.start("0 * * * *");
+
+  // Stop schedulers on server close
   server.on("close", () => {
     snapshotScheduler.stop();
+    settlementWorker.stop();
   });
 
   return { server };
